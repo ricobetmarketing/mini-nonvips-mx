@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>En Vivo — Baccarat</title>
+<style>
+  :root{
+    --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff; --gold:#ffd86a;
+    --felt1:#184d57; --felt2:#0f2f35;
+    --cardW: clamp(62px, 9.2vw, 92px);
+    --cardH: calc(var(--cardW) * 1.39);
+    --page-bg: url("https://ricomx.ft-crm.com/media-api/serve/d9ac58ea-8cb5-4568-9bf6-01928a0e087a_BG1.jpg");
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    background:linear-gradient( rgba(18,8,38,.12), rgba(8,7,20,.55) ), var(--page-bg) center/cover no-repeat fixed;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    display:flex; align-items:center; justify-content:center; padding:8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @supports (-webkit-touch-callout:none){ body{ background-attachment: scroll; } }
+  button{ touch-action:manipulation; }
+  .wrap{ width:min(1100px,98vw) }
+  .card{ position:relative; border-radius:22px; padding:12px; overflow:visible; background:linear-gradient(180deg,#1b2a56,#0f1832); outline:1px solid rgba(255,255,255,.08); box-shadow:0 16px 60px rgba(0,0,0,.55) }
+  .top{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:2px 2px 8px; flex-wrap:wrap }
+  .status{font-weight:800; background:rgba(0,0,0,.35); padding:6px 10px; border-radius:10px}
+  .backBtn{
+    position:fixed; top:calc(10px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
+    z-index:99999; display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; text-decoration:none;
+    font-weight:900; letter-spacing:.3px; color:#0c1220; background:#eaf2ff; box-shadow:0 6px 24px rgba(0,0,0,.35), inset 0 -2px 0 rgba(0,0,0,.25);
+  }
+  .felt{ position:relative; border-radius:22px; padding:14px 14px 140px; background:radial-gradient(closest-side,var(--felt1),var(--felt2));
+         outline:1px solid rgba(255,255,255,.08); box-shadow:inset 0 0 70px rgba(0,0,0,.6), 0 0 60px rgba(113,225,255,.18), 0 0 80px rgba(192,107,255,.16);
+         overflow:hidden; width:100%; aspect-ratio:16/9; max-height:calc(100vh - 140px) }
+  #fx{ position:absolute; inset:0; pointer-events:none; z-index:1 }
+  .hud{ position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:9; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center }
+  .pill{background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-weight:900; font-size:clamp(12px,1.8vw,14px)}
+  .hand{ position:absolute; top:clamp(18px, 3.5vh, 34px); display:flex; gap:10px; z-index:5; pointer-events:none }
+  .hand.player{ left:clamp(14px, 5vw, 60px) } .hand.banker{ right:clamp(14px, 5vw, 60px) }
+  .tot{ position:absolute; top:6px; font:900 clamp(11px,1.8vw,14px)/1 ui-sans-serif; color:var(--gold); text-shadow:0 2px 6px rgba(0,0,0,.6) }
+  .tot.p{ left:clamp(14px, 5vw, 60px) } .tot.b{ right:clamp(14px, 5vw, 60px) }
+  .areas{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:grid; grid-auto-flow:column; grid-template-columns:repeat(3,1fr);
+          align-items:center; justify-items:center; gap:clamp(10px,3vw,28px); width:min(520px,72%); z-index:20 }
+  .area{ appearance:none; border:0; background:none; padding:0; margin:0; position:relative; cursor:pointer; color:inherit }
+  .betSpot{ display:grid; place-items:center; width:clamp(82px,12vw,140px); height:clamp(82px,12vw,140px); border-radius:50%;
+            box-shadow:inset 0 0 0 6px rgba(255,255,255,.15); background:radial-gradient(circle, rgba(255,255,255,.08), rgba(255,255,255,0) 65%); outline:2px dashed rgba(255,255,255,.14) }
+  .lab{ display:block; font:900 clamp(13px,2.2vw,18px)/1 ui-sans-serif; letter-spacing:1px }
+  .odds{ display:block; opacity:.85; font-weight:800; font-size:clamp(10px,1.6vw,12px); margin-top:2px }
+  .player .lab{ color:#c6ffea } .banker .lab{ color:#ffc6c6 } .tie .lab{ color:#ffe39a }
+  .playing-card{ width:var(--cardW); height:var(--cardH); border-radius:14px; position:relative; outline:2px solid #e5ecff; box-shadow:0 16px 28px rgba(0,0,0,.4); perspective:1000px }
+  .card3d{ position:absolute; inset:0; border-radius:14px; transition:transform .6s ease; transform:rotateY(0); transform-style:preserve-3d; -webkit-transform-style:preserve-3d }
+  .sideFace{ position:absolute; inset:0; display:grid; place-items:center; border-radius:14px; font-weight:900; backface-visibility:hidden; -webkit-backface-visibility:hidden }
+  .back{ background:linear-gradient(180deg,#0e1a3a,#0a1329); color:#9fb0d9; font-size:clamp(20px,3.4vw,28px) }
+  .front{ background:radial-gradient(240px 160px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%); color:#1a2050; font-size:clamp(18px,3vw,26px); transform:rotateY(180deg) }
+  .reveal .card3d{ transform:rotateY(180deg) }
+  .controls{ position:absolute; left:50%; bottom:10px; transform:translateX(-50%); display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; z-index:22 }
+  .btn{border:0; border-radius:14px; padding:10px 16px; font-weight:900; cursor:pointer; background:linear-gradient(to right,var(--g1),var(--g2)); color:#061018; box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
+  .winner{ position:absolute; inset:0; display:none; place-items:center; z-index:8; pointer-events:none }
+  .winner.show{ display:grid; animation:fadeOut 2.4s ease forwards }
+  @keyframes fadeOut{ 0%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
+  .winBadge{ padding:16px 26px; border-radius:18px; font:900 clamp(20px,4vw,34px)/1 ui-sans-serif; letter-spacing:1px; color:#061018; box-shadow:0 0 24px rgba(113,225,255,.6) }
+  .winBadge.player{ background:linear-gradient(90deg,#aaffef,#71f1d6)} .winBadge.banker{ background:linear-gradient(90deg,#ffc6cf,#ff9aa5)} .winBadge.tie{ background:linear-gradient(90deg,#fff0b5,#ffd86a)}
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,12,.86); display:none; place-items:center; z-index:13000; backdrop-filter: blur(4px) }
+  .overlay.show{ display:grid }
+  .modal{ width:min(520px,92vw); border-radius:20px; padding:18px; text-align:center; background:radial-gradient(120% 120% at 50% 0%, #1a1740 0%, #0d1230 60%); outline:1px solid rgba(180,220,255,.25); box-shadow:0 24px 90px rgba(0,0,0,.75); color:#eaf2ff }
+  .row{display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap}
+  .copy,.close{cursor:pointer; border:0; border-radius:12px; padding:10px 14px; font-weight:900; font-size:clamp(13px,3.6vw,14px)}
+  .copy{background:#2b2b2b; color:#fff} .close{background:#fff; color:#111}
+  .bgmBtn{ position:fixed; top:10px; right:10px; z-index:9999; border:1px solid rgba(255,255,255,.2); background:rgba(6,9,18,.6); backdrop-filter:blur(6px); color:#eaf2ff; font-weight:700; font-size:12px; border-radius:999px; padding:6px 10px; box-shadow:0 4px 10px rgba(0,0,0,.35) }
+  .bgmBtn[aria-pressed="false"]{ opacity:.65 }
+</style>
+</head>
+<body>
+
+<a class="backBtn" id="backBtn" href="index.html">Volver</a>
+
+<div class="wrap">
+  <div class="card">
+    <div class="top">
+      <div class="note" style="font-size:12px;opacity:.9">Coloca hasta <b>3 apuestas</b></div>
+      <div class="status" id="status">Listo</div>
+    </div>
+
+    <div class="felt" id="felt" aria-live="polite">
+      <canvas id="fx"></canvas>
+
+      <div class="hud"><div class="pill" id="progressTop">Apuestas restantes: 3 • Victorias: 0</div></div>
+
+      <div class="tot p" id="pTot">Jugador: —</div>
+      <div class="tot b" id="bTot">Banquero: —</div>
+
+      <div class="hand player" id="pHand"></div>
+      <div class="hand banker" id="bHand"></div>
+
+      <div class="areas" id="areas" role="group" aria-label="Áreas de apuesta">
+        <button type="button" class="area player" id="areaPlayer" data-side="player" aria-label="Apostar al Jugador">
+          <div class="betSpot"><div class="spotText"><span class="lab">JUGADOR</span><span class="odds">1 : 1</span></div></div>
+        </button>
+        <button type="button" class="area tie" id="areaTie" data-side="tie" aria-label="Apostar al Empate">
+          <div class="betSpot"><div class="spotText"><span class="lab">EMPATE</span><span class="odds">8 : 1</span></div></div>
+        </button>
+        <button type="button" class="area banker" id="areaBanker" data-side="banker" aria-label="Apostar al Banquero">
+          <div class="betSpot"><div class="spotText"><span class="lab">BANQUERO</span><span class="odds">0.95 : 1</span></div></div>
+        </button>
+      </div>
+
+      <div class="controls"><button class="btn" id="dealBtn" type="button" disabled>Repartir</button></div>
+      <div class="winner" id="winnerOverlay"><div class="winBadge" id="winBadge">Victoria del Jugador</div></div>
+    </div>
+
+    <div class="outerBanner" style="margin:10px 4px 0; display:flex; justify-content:center;">
+      <div class="pill" id="outerBanner">Toca un círculo: Jugador / Empate / Banquero</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Puerta VIP (solo aviso; marca localStorage sin bloqueo rígido) -->
+<div class="overlay" id="vipGate" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div style="font-weight:900; font-size:clamp(18px,4.5vw,24px); margin-bottom:6px">¡VIP 01 para desbloquear código de cupón!</div>
+    <div style="color:#a9b7d8; margin-bottom:10px">Completaste la previa. Hazte VIP 01 o superior para recibir códigos de cupón.</div>
+    <div class="row">
+      <a class="close" id="vipLearn" href="https://tr.ee/ricobetvipmx" target="_blank" rel="noopener">Cómo desbloquear</a>
+      <button class="copy"  id="vipBack"  type="button">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm" src="theme.mp3" preload="auto" loop playsinline></audio>
+<button id="bgmToggle" class="bgmBtn" aria-pressed="false" hidden>🔊 Sonido</button>
+
+<script>
+/* Marcación de finalización local (sin bloqueo rígido): 'rb_vip_played' */
+const LS_KEY = 'rb_vip_played';
+
+function g(id){return document.getElementById(id)}
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+
+const vipGate = g('vipGate'); const vipLearn = g('vipLearn'); const vipBack = g('vipBack');
+vipBack.onclick  = ()=>{ vipGate.classList.remove('show'); };
+
+/* Audio */
+let AC=null, audioReady=false; const bgm=g('bgm'), bgmBtn=g('bgmToggle'); const baseVol=0.22;
+function ensureAC(){ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } }
+function unlockAudio(){ ensureAC(); if(AC && AC.state==='suspended'){ AC.resume(); } try{ bgm.muted=false; bgm.volume=baseVol; bgm.play(); }catch(e){} audioReady=true; }
+['pointerdown','touchstart','mousedown','keydown'].forEach(ev=>document.addEventListener(ev, unlockAudio, {once:true, passive:true}));
+window.addEventListener('load', async ()=>{ try{ bgm.volume=baseVol; bgm.muted=true; await bgm.play(); }catch(e){} bgmBtn.hidden=false; }, {once:true});
+bgmBtn.addEventListener('click', async ()=>{ try{ if(bgm.paused){ bgm.muted=false; bgm.volume=baseVol; await bgm.play(); bgmBtn.setAttribute('aria-pressed','true'); } else { bgm.pause(); bgmBtn.setAttribute('aria-pressed','false'); } }catch(e){} });
+
+/* Efectos de sonido */
+function tone(type,freq,dur,gain){ if(!audioReady||!AC) return; const t=AC.currentTime, o=AC.createOscillator(), k=AC.createGain(); o.type=type; o.frequency.setValueAtTime(freq,t); k.gain.value=gain; k.gain.exponentialRampToValueAtTime(0.0001, t+dur); o.connect(k).connect(AC.destination); o.start(t); o.stop(t+dur); }
+function blip(f=780,d=0.07,g=0.07){ tone('square',f,d,g); }
+function thud(d=0.12,g=0.18){ if(!audioReady||!AC)return; const t=AC.currentTime, o=AC.createOscillator(), k=AC.createGain(), f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=320; o.type='sine'; o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(62,t+d); k.gain.value=g; k.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(f).connect(k).connect(AC.destination); o.start(t); o.stop(t+d); }
+
+/* FX confeti */
+const fx=g('fx'), ctx=fx.getContext('2d');
+function resizeFX(){ fx.width=fx.parentElement.clientWidth; fx.height=fx.parentElement.clientHeight }
+addEventListener('resize',resizeFX); addEventListener('orientationchange',()=>setTimeout(resizeFX,200)); resizeFX();
+function confetti(){ const p=[]; for(let i=0;i<140;i++) p.push({x:fx.width/2,y:120+Math.random()*20,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*5,life:140+Math.random()*60,r:2+Math.random()*3,h:Math.random()*360}); (function loop(){ ctx.clearRect(0,0,fx.width,fx.height); p.forEach(o=>{ o.x+=o.vx;o.y+=o.vy;o.vy+=0.06;o.life--;ctx.globalAlpha=Math.max(0,o.life/200);ctx.fillStyle=`hsl(${o.h},100%,60%)`;ctx.fillRect(o.x,o.y,o.r,o.r);}); ctx.globalAlpha=1; if(p.some(o=>o.life>0)) requestAnimationFrame(loop); })(); }
+
+/* DOM refs */
+const status=g('status'), banner=g('outerBanner');
+const pHand=g('pHand'), bHand=g('bHand'), pTot=g('pTot'), bTot=g('bTot');
+const btnP=g('areaPlayer'), btnT=g('areaTie'), btnB=g('areaBanker');
+const dealBtn=g('dealBtn'), progressTop=g('progressTop');
+const winnerOverlay=g('winnerOverlay'), winBadge=g('winBadge');
+
+/* Estado */
+let roundsPlayed=0, winsCount=0, selection=null, inRound=false;
+
+/* Baraja Baccarat */
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS=['♠','♥','♦','♣'];
+function bacVal(r){ if(r==='A')return 1; if(r==='10'||r==='J'||r==='Q'||r==='K') return 0; return +r }
+function total(hand){ return hand.reduce((t,c)=>t+bacVal(c.r),0)%10 }
+function newCard(){ const r=RANKS[(Math.random()*RANKS.length)|0]; const s=SUITS[(Math.random()*4)|0]; return {r,s,shown:false,el:null} }
+function makeCardEl(card, show=false){ const el=document.createElement('div'); el.className='playing-card'+(show?' reveal':''); el.innerHTML=`<div class="card3d"><div class="sideFace back">🂠</div><div class="sideFace front">${card.r}${card.s}</div></div>`; card.el=el; card.shown=!!show; return card; }
+function flip(card){ if(card.shown) return; card.shown=true; if(card.el) card.el.classList.add('reveal'); blip(780,0.07,0.07); }
+function heartbeat(node){ node.classList.remove('heartbeat'); void node?.offsetWidth; node?.classList?.add('heartbeat'); thud(0.1,0.14); }
+
+/* Controles */
+function lock(disabled){ [btnP,btnT,btnB].forEach(b=>{ b.disabled=!!disabled; if(disabled) b.classList.remove('sel') }); dealBtn.disabled=!!disabled; if(disabled) selection=null; }
+function selectSide(side){ if(inRound) return; const map={player:btnP, tie:btnT, banker:btnB}; const btn=map[side]; if(!btn||btn.disabled) return; [btnP,btnT,btnB].forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); selection=side; dealBtn.disabled=false; banner.textContent=`Seleccionado: ${side==='player'?'JUGADOR':side==='banker'?'BANQUERO':'EMPATE'} • Toca REPARTIR`; status.textContent=`Seleccionado: ${side}`; }
+[btnP,btnT,btnB].forEach(b=>{ b.addEventListener('click', e=>{ e.preventDefault(); if(!b.disabled) selectSide(b.dataset.side); }, {passive:false}); });
+
+dealBtn.addEventListener('click', startRound, {passive:true});
+
+async function startRound(){
+  if(inRound) return;
+  if(!selection) return alert('Selecciona Jugador / Empate / Banquero primero.');
+  if(roundsPlayed>=3){ return showGate(); }
+  inRound=true; dealBtn.disabled=true;
+
+  // Preparar manos
+  pHand.innerHTML=''; bHand.innerHTML='';
+  let P=[makeCardEl(newCard(),false), makeCardEl(newCard(),false)];
+  let B=[makeCardEl(newCard(),false), makeCardEl(newCard(),false)];
+  P.forEach(c=>pHand.appendChild(c.el)); B.forEach(c=>bHand.appendChild(c.el));
+
+  await delay(250); flip(P[0]); updateTotals(P,B);
+  await delay(550); flip(B[0]); updateTotals(P,B);
+  await delay(550); flip(P[1]); updateTotals(P,B);
+  await delay(550); flip(B[1]); updateTotals(P,B);
+
+  if(total(P)>=8 || total(B)>=8){ await finishRound(P,B); return; }
+
+  let playerThird=null;
+  if(total(P)<=5){ playerThird=makeCardEl(newCard(),false); pHand.appendChild(playerThird.el); await delay(420); flip(playerThird); P.push(playerThird); updateTotals(P,B); }
+
+  const bT0=total(B); let needBanker=false;
+  if(!playerThird){ needBanker=bT0<=5; }
+  else{
+    const v=bacVal(playerThird.r);
+    needBanker=(bT0<=2)||(bT0===3 && v!==8)||(bT0===4 && v>=2 && v<=7)||(bT0===5 && v>=4 && v<=7)||(bT0===6 && (v===6||v===7));
+  }
+  if(needBanker){ const b3=makeCardEl(newCard(),false); bHand.appendChild(b3.el); await delay(420); flip(b3); B.push(b3); updateTotals(P,B); }
+
+  await finishRound(P,B);
+}
+
+function updateTotals(P=[],B=[]){
+  const p=P.some(c=>c.shown)?total(P):'—', b=B.some(c=>c.shown)?total(B):'—';
+  g('pTot').textContent='Jugador: '+p; g('bTot').textContent='Banquero: '+b;
+}
+
+async function finishRound(P,B){
+  const pT=total(P), bT=total(B);
+  let who = (pT>bT)?'player' : (bT>pT)?'banker':'tie';
+  const text = (who==='player') ? 'Victoria del Jugador' : (who==='banker') ? 'Victoria del Banquero' : 'Empate';
+  showWinner(who, text);
+  if(who!=='tie' && selection===who) winsCount++;
+  roundsPlayed++;
+  const left=Math.max(0,3-roundsPlayed);
+  g('progressTop').textContent=`Apuestas restantes: ${left} • Victorias: ${winsCount}`;
+
+  if(roundsPlayed>=3){
+    try{ localStorage.setItem(LS_KEY,'1'); }catch(e){}
+    await delay(800);
+    showGate();
+  } else {
+    setTimeout(()=>{ g('pHand').innerHTML=''; g('bHand').innerHTML=''; g('winnerOverlay').classList.remove('show'); inRound=false; lock(false); g('dealBtn').disabled=true; g('outerBanner').textContent = `Haz tu apuesta: Jugador / Empate / Banquero (${left} restantes)`; status.textContent = 'Haz tu apuesta'; }, 2200);
+  }
+}
+
+function showWinner(winner,text){
+  const badge=g('winBadge'); badge.textContent=text; badge.className='winBadge '+(winner==='player'?'player':winner==='banker'?'banker':'tie');
+  const ov=g('winnerOverlay'); ov.classList.remove('show'); void ov.offsetWidth; ov.classList.add('show');
+  if(winner==='player'){ confetti(); }
+}
+
+function showGate(){ vipGate.classList.add('show'); lock(true); }
+function init(){
+  /* No bloquea reingreso; solo marca en localStorage */
+  const played = (()=>{
+    try{ return localStorage.getItem(LS_KEY)==='1'; }catch(e){ return false; }
+  })();
+  if(played){
+    // Opcional: podríamos mostrar un aviso sutil; mantenemos silencioso para no "bloquear".
+  }
+  g('outerBanner').textContent='Toca un círculo: Jugador / Empate / Banquero';
+  lock(false);
+}
+init();
+</script>
+</body>
+</html>
